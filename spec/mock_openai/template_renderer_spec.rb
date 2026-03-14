@@ -33,7 +33,7 @@ RSpec.describe MockOpenAI::TemplateRenderer do
       expect(result).to eq("{{unknown}}")
     end
 
-    it "returns the template unchanged when context values are nil" do
+    it "replaces nil context values with empty string" do
       ctx = {last_user_message: nil, system_message: nil, model: nil}
       result = described_class.render("Reply to: {{last_user_message}}", ctx)
       expect(result).to eq("Reply to: ")
