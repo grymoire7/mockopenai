@@ -1,0 +1,4 @@
+<span style="display: block">{{ site.title }}</span>
+{% if site.logo %}
+  <img src="{{ site.logo | relative_url }}" alt="{{ site.title }} logo" style="display: block; width: 100%; margin-top: 0.5rem;">
+{% endif %}
