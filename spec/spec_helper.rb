@@ -4,6 +4,7 @@ require "mock_openai"
 require "rack/test"
 require "tmpdir"
 require "fileutils"
+require "tempfile"
 
 RSpec.configure do |config|
   config.expect_with :rspec do |c|
