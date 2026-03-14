@@ -3,7 +3,11 @@
 module MockOpenAI
   module FailureModes
     class TruncatedStream < Base
-      # stub
+      def apply(request:, response:)
+        :stream_truncated
+      end
     end
+
+    REGISTRY["truncated_stream"] = TruncatedStream
   end
 end

@@ -3,7 +3,11 @@
 module MockOpenAI
   module FailureModes
     class MalformedJson < Base
-      # stub
+      def apply(request:, response:)
+        [200, {"Content-Type" => "application/json"}, ['{ "choices": [ ']]
+      end
     end
+
+    REGISTRY["malformed_json"] = MalformedJson
   end
 end

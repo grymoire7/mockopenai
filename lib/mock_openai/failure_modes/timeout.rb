@@ -3,7 +3,11 @@
 module MockOpenAI
   module FailureModes
     class Timeout < Base
-      # stub
+      def apply(request:, response:)
+        :timeout
+      end
     end
+
+    REGISTRY["timeout"] = Timeout
   end
 end
