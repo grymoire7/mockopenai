@@ -5,7 +5,7 @@ module MockOpenAI
     attr_reader :state_file
 
     def initialize(state_file: nil)
-      @state_file = state_file || File.join(Dir.tmpdir, "mock_openai_state.json")
+      @state_file = state_file || "tmp/mock_openai_state.json"
     end
 
     def self.load
