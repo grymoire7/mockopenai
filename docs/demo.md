@@ -3,9 +3,14 @@
 *2026-03-14T15:11:14Z by Showboat 0.6.0*
 <!-- showboat-id: 3619c7c1-bb12-4774-8114-e51b069c69d5 -->
 
-MockOpenAI is a local Rack-based mock server gem for OpenAI-compatible APIs. It gives your test suite deterministic, per-test control over mock server responses — no monkey-patching, no network, no separate process needed for integration tests.
+MockOpenAI is a local Rack-based mock server gem for OpenAI-compatible APIs. It
+gives your test suite deterministic, per-test control over mock server
+responses — no monkey-patching, no network, no separate process needed for
+integration tests.
 
-All behaviour is encoded in a shared JSON state file. Tests write rules via `MockOpenAI.set_responses`; the Rack handler reads them on every request. Communication is pure file I/O.
+All behaviour is encoded in a shared JSON state file. Tests write rules via
+`MockOpenAI.set_responses`; the Rack handler reads them on every request.
+Communication is pure file I/O.
 
 ## 1. CLI
 
@@ -40,7 +45,9 @@ Created mock_openai.yml
 # default_response: "Mock response from MockOpenAI"
 ```
 
-**`start`** — boot the Rack/WEBrick server on the configured port (binds to `127.0.0.1` by default, accepts `--port=N`). Not shown here since it blocks; use it to run the mock as a standalone service alongside an app under test.
+**`start`** — boot the Rack/WEBrick server on the configured port (binds to
+`127.0.0.1` by default, accepts `--port=N`). Not shown here since it blocks;
+use it to run the mock as a standalone service alongside an app under test.
 
 ## 2. Public Ruby API
 
@@ -75,7 +82,9 @@ After reset — rules: 0, mode: nil
 
 ## 3. HTTP Handler
 
-`POST /v1/chat/completions` speaks the OpenAI wire format. The handler can be driven directly with rack-test — no server process needed ([`docs/demo_http.rb`](demo_http.rb)):
+`POST /v1/chat/completions` speaks the OpenAI wire format. The handler can be
+driven directly with rack-test — no server process needed
+([`docs/demo_http.rb`](demo_http.rb)):
 
 ```ruby
 app     = MockOpenAI::Router.new
@@ -120,7 +129,9 @@ Unknown route  → HTTP 404
 
 ## 4. RSpec Metadata Integration
 
-Add `require "mock_openai/rspec"` to `spec_helper.rb` once. Metadata tags then control mock state automatically — no manual `before`/`after` hooks needed ([`docs/demo_rspec_spec.rb`](demo_rspec_spec.rb)):
+Add `require "mock_openai/rspec"` to `spec_helper.rb` once. Metadata tags then
+control mock state automatically — no manual `before`/`after` hooks needed
+([`docs/demo_rspec_spec.rb`](demo_rspec_spec.rb)):
 
 ```ruby
 # :mock_openai — resets state before each example
@@ -165,7 +176,9 @@ Finished in 0.00679 seconds (files took 0.07208 seconds to load)
 
 ## 5. Full Test Suite
 
-71 examples covering every class — Config, State, Matcher, ResponseBuilder, TemplateRenderer, all five FailureMode classes, ChatCompletions handler, Router, Server, CLI, RSpec metadata, and the public API.
+71 examples covering every class — Config, State, Matcher, ResponseBuilder,
+TemplateRenderer, all five FailureMode classes, ChatCompletions handler,
+Router, Server, CLI, RSpec metadata, and the public API.
 
 ```bash
 bundle exec rspec --format progress --no-color

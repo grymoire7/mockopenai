@@ -3,7 +3,9 @@
 A local mock server for OpenAI-compatible APIs — deterministic responses and
 per-request failure simulation for any Ruby application.
 
-MockOpenAI lets you test any Ruby app that calls an LLM **without hitting real APIs**. It works with Rails, Sinatra, CLI tools, background jobs, or plain Ruby scripts. It gives you:
+MockOpenAI lets you test any Ruby app that calls an LLM **without hitting real
+APIs**. It works with Rails, Sinatra, CLI tools, background jobs, or plain Ruby
+scripts. It gives you:
 
 - Deterministic responses
 - Per-request matching (exact, substring, regex)
