@@ -11,6 +11,16 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  # Suppress stdout during tests; output(...).to_stdout still captures correctly
+  # because that matcher replaces $stdout itself with its own StringIO.
+  config.around(:each) do |example|
+    original_stdout = $stdout
+    $stdout = StringIO.new
+    example.run
+  ensure
+    $stdout = original_stdout
+  end
+
   # Use a temp state file for all specs to avoid polluting tmp/
   config.before(:each) do
     @state_dir = Dir.mktmpdir
