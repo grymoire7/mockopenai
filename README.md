@@ -51,15 +51,38 @@ bundle install
 
 ---
 
-## Quickstart
+## Usage Patterns
 
-Start the mock server in a separate terminal:
+MockOpenAI supports two modes depending on your test type:
+
+### In-process (unit and integration tests)
+
+For RSpec tests that call your Ruby service objects or controllers directly, no server process is needed. The mock handler runs inside the test process via rack-test:
+
+```ruby
+# spec/rails_helper.rb
+require "mock_openai/rspec"
+```
+
+```ruby
+# spec/services/my_service_spec.rb
+it "returns a canned response", :mock_openai do
+  MockOpenAI.set_responses([{ match: "Hello", response: "Hi!" }])
+  expect(MyService.call_openai("Hello")).to eq("Hi!")
+end
+```
+
+State is shared via a JSON file that both the test and the Rack handler read/write within the same process. No ports, no sockets.
+
+### Standalone server (system and end-to-end tests)
+
+For Capybara or Playwright tests that drive a real Rails server process, the app and tests run in separate processes. Start the mock server in a terminal:
 
 ```
 mock-openai start
 ```
 
-Configure your OpenAI client in `config/environments/test.rb`:
+Configure your OpenAI client to point at it in `config/environments/test.rb`:
 
 ```ruby
 OpenAI.configure do |c|
@@ -67,17 +90,11 @@ OpenAI.configure do |c|
 end
 ```
 
-Add RSpec integration to `rails_helper.rb`:
-
-```ruby
-require "mock_openai/rspec"
-```
-
-You're ready to go.
+Tests still control behavior via `MockOpenAI.set_responses` — it writes to the same shared state file that the server reads on every request.
 
 ---
 
-## Usage
+## Examples
 
 ### Simple canned response
 
