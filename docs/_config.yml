@@ -1,0 +1,31 @@
+title: MockOpenAI
+description: >-
+  A local mock server for OpenAI-compatible APIs — deterministic responses
+  and per-request failure simulation for any Ruby application.
+baseurl: "/mockopenai"
+url: "https://grymoire7.github.io"
+
+theme: just-the-docs
+
+aux_links:
+  "MockOpenAI on GitHub":
+    - "//github.com/grymoire7/mockopenai"
+
+aux_links_new_tab: true
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+exclude:
+  - plans/
+  - specs/
+  - architecture.md
+  - design.md
+  - mvp.md
+  - demo.md
+  - demo_api.rb
+  - demo_http.rb
+  - demo_rspec_spec.rb

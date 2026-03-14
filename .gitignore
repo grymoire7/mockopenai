@@ -33,3 +33,4 @@
 # Git worktrees
 .worktrees/
 
+docs/_site/
