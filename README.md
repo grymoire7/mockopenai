@@ -1,8 +1,9 @@
 # MockOpenAI
 
-A drop-in, Rails-native mock server for OpenAI-compatible APIs — with deterministic responses and per-request failure simulation.
+A local mock server for OpenAI-compatible APIs — deterministic responses and
+per-request failure simulation for any Ruby application.
 
-MockOpenAI lets you test your AI-powered Rails apps **without hitting real LLM APIs**. It gives you:
+MockOpenAI lets you test any Ruby app that calls an LLM **without hitting real APIs**. It works with Rails, Sinatra, CLI tools, background jobs, or plain Ruby scripts. It gives you:
 
 - Deterministic responses
 - Per-request matching (exact, substring, regex)
@@ -26,8 +27,8 @@ All without modifying your application code or wrapping your OpenAI client.
   - Malformed JSON
   - Internal server errors
   - Truncated streaming
-- **Rails-native RSpec metadata API**
-- **Stateless local mock server**
+- **RSpec metadata API** (works with Rails, Sinatra, or plain Ruby)
+- **Stateless local mock server** for end-to-end and system tests
 - **File-based shared state** (no client wrapping, no monkey-patching)
 - **Deterministic tests** for CI/CD
 
@@ -57,7 +58,9 @@ MockOpenAI supports two modes depending on your test type:
 
 ### In-process (unit and integration tests)
 
-For RSpec tests that call your Ruby service objects or controllers directly, no server process is needed. The mock handler runs inside the test process via rack-test:
+For RSpec tests that call your Ruby service objects or controllers directly, no
+server process is needed. The mock handler runs inside the test process via
+rack-test:
 
 ```ruby
 # spec/rails_helper.rb
@@ -72,11 +75,13 @@ it "returns a canned response", :mock_openai do
 end
 ```
 
-State is shared via a JSON file that both the test and the Rack handler read/write within the same process. No ports, no sockets.
+State is shared via a JSON file that both the test and the Rack handler
+read/write within the same process. No ports, no sockets.
 
 ### Standalone server (system and end-to-end tests)
 
-For Capybara or Playwright tests that drive a real Rails server process, the app and tests run in separate processes. Start the mock server in a terminal:
+For Capybara or Playwright tests that drive a real Rails server process, the
+app and tests run in separate processes. Start the mock server in a terminal:
 
 ```
 mock-openai start
@@ -90,7 +95,8 @@ OpenAI.configure do |c|
 end
 ```
 
-Tests still control behavior via `MockOpenAI.set_responses` — it writes to the same shared state file that the server reads on every request.
+Tests still control behavior via `MockOpenAI.set_responses` — it writes to the
+same shared state file that the server reads on every request.
 
 ---
 
@@ -110,7 +116,8 @@ end
 
 ### Multi-step conversation
 
-Rules are matched in order (first match wins) using exact, substring, or regex matching against the last user message.
+Rules are matched in order (first match wins) using exact, substring, or regex
+matching against the last user message.
 
 ```ruby
 it "handles a multi-step conversation", :mock_openai do
@@ -130,7 +137,8 @@ end
 
 ### Failure modes (per request)
 
-Failures are specified per-rule, not per-test, so you can mix success and failure in a single test run:
+Failures are specified per-rule, not per-test, so you can mix success and
+failure in a single test run:
 
 ```ruby
 it "handles mixed outcomes", :mock_openai do
@@ -228,7 +236,8 @@ timeout_seconds: 5
 5. It applies the rule: failure mode, static response, or template
 6. If no rule matches, it returns the configured default response
 
-The server stores no internal state. All behavior is driven by the shared state file, making tests fully deterministic and isolated.
+The server stores no internal state. All behavior is driven by the shared state
+file, making tests fully deterministic and isolated.
 
 ---
 
