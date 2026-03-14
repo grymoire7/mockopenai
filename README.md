@@ -31,6 +31,7 @@ Sinatra, CLI tools, background jobs, or plain Ruby scripts.
 ## Installation
 
 ```ruby
+# Gemfile
 group :test do
   gem "mock_openai"
 end
