@@ -19,6 +19,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rack", "~> 3.0"
   spec.add_dependency "rackup", "~> 2.0"
+  spec.add_dependency "logger", "~> 1.0"
 
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "rack-test", "~> 2.0"
