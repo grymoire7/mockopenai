@@ -20,22 +20,22 @@ docs/
   Gemfile.lock
   index.md                        # Home (nav_order: 1)
   getting-started/
-    index.md                      # Section landing (nav_order: 2, has_children: true)
+    index.md                      # nav_order: 2, has_children: true
     installation.md
     quick-start.md
   usage/
-    index.md                      # nav_order: 3
+    index.md                      # nav_order: 3, has_children: true
     in-process.md
     standalone.md
     api-reference.md
     rspec-metadata.md
   examples/
-    index.md                      # nav_order: 4
+    index.md                      # nav_order: 4, has_children: true
     basic.md
     failure-modes.md
     templates.md
   reference/
-    index.md                      # nav_order: 5
+    index.md                      # nav_order: 5, has_children: true
     cli.md
     configuration.md
     how-it-works.md
@@ -54,12 +54,10 @@ title: MockOpenAI
 description: >-
   A local mock server for OpenAI-compatible APIs — deterministic responses
   and per-request failure simulation for any Ruby application.
-baseurl: "/mockopenai"
+baseurl: "/mockopenai"   # production value; use --baseurl "" for local jekyll serve
 url: "https://grymoire7.github.io"
 
 theme: just-the-docs
-plugins:
-  - jekyll-feed
 
 aux_links:
   "MockOpenAI on GitHub":
@@ -75,6 +73,7 @@ defaults:
 
 exclude:
   - plans/
+  - superpowers/
   - architecture.md
   - design.md
   - mvp.md
@@ -91,13 +90,16 @@ source "https://rubygems.org"
 
 gem "jekyll", "~> 4.4.1"
 gem "just-the-docs"
-
-group :jekyll_plugins do
-  gem "jekyll-feed", "~> 0.12"
-end
 ```
 
+After creating `Gemfile`, run `bundle install` from `docs/` to generate
+`Gemfile.lock`, then commit it. The CI workflow (`ruby/setup-ruby` with
+`bundler-cache: true`) expects the lockfile to be present.
+
 ## GitHub Actions Workflow
+
+Before the first deployment, GitHub Pages must be enabled in repository
+Settings → Pages with source set to **GitHub Actions**.
 
 `.github/workflows/pages.yml` mirrors jojo's workflow exactly:
 
