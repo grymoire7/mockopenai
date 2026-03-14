@@ -1,5 +1,4 @@
 /.bundle/
-/Gemfile.lock
 /mock_openai.yml
 /.yardoc
 /_yardoc/
