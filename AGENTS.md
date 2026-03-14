@@ -1,0 +1,31 @@
+# mockopenai
+
+MockOpenAI is a local mock server gem for OpenAI‑compatible APIs. It's designed
+to make AI testing fast, deterministic, and reliable for Ruby/Rails applications.
+
+See REAMDE.md for basic description and usage.
+
+## Setup
+
+After cloning, install the StandardRB pre-commit hook:
+
+```bash
+cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/sh
+set -e
+rubyfiles=$(git diff --cached --name-only --diff-filter=ACM "*.rb" "Gemfile" | tr '\n' ' ')
+[ -z "$rubyfiles" ] && exit 0
+echo "Formatting staged Ruby files with standardrb"
+echo "$rubyfiles" | xargs bundle exec standardrb --fix
+echo "$rubyfiles" | xargs git add
+exit 0
+EOF
+chmod +x .git/hooks/pre-commit
+```
+
+## Development Rules
+
+- Use TDD red-green-refactor cycle for all development.
+- Do not use worktrees. Prefer to work off main. Feature branches for riskier changes.
+
+
