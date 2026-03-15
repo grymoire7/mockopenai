@@ -12,6 +12,8 @@ module MockOpenAI
       case [request.request_method, request.path_info]
       in ["POST", "/v1/chat/completions"]
         Handlers::ChatCompletions.new.call(env)
+      in ["POST", "/v1/messages"]
+        Handlers::Messages.new.call(env)
       else
         [404, {"Content-Type" => "application/json"}, [NOT_FOUND_BODY]]
       end

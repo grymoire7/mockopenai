@@ -13,11 +13,25 @@ RSpec.describe MockOpenAI::Router do
     {"model" => "gpt-4", "messages" => [{"role" => "user", "content" => "hi"}]}.to_json
   end
 
+  let(:anthropic_body) do
+    {
+      "model" => "claude-3-haiku",
+      "messages" => [{"role" => "user", "content" => "hi"}]
+    }.to_json
+  end
+
   it "routes POST /v1/chat/completions to ChatCompletions handler" do
     post "/v1/chat/completions", valid_body, "CONTENT_TYPE" => "application/json"
     expect(last_response.status).to eq(200)
     body = JSON.parse(last_response.body)
     expect(body["object"]).to eq("chat.completion")
+  end
+
+  it "routes POST /v1/messages to Messages handler" do
+    post "/v1/messages", anthropic_body, "CONTENT_TYPE" => "application/json"
+    expect(last_response.status).to eq(200)
+    body = JSON.parse(last_response.body)
+    expect(body["type"]).to eq("message")
   end
 
   it "returns 404 for unknown routes" do
