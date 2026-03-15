@@ -9,6 +9,12 @@ Gem::Specification.new do |spec|
   spec.summary = "A local mock server for OpenAI-compatible APIs"
   spec.description = "Drop-in mock server for testing Rails apps that use OpenAI-compatible APIs. Provides deterministic responses and per-request failure simulation."
   spec.license = "MIT"
+  spec.homepage = "https://github.com/grymoire7/mockopenai"
+
+  spec.metadata = {
+    "documentation_uri" => "https://grymoire7.github.io/mockopenai",
+    "homepage_uri"      => "https://github.com/grymoire7/mockopenai"
+  }
 
   spec.required_ruby_version = ">= 3.0"
 
