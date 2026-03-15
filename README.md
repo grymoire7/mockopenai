@@ -45,6 +45,8 @@ bundle install
 
 ## Quick Start
 
+**RSpec:**
+
 ```ruby
 # spec/rails_helper.rb
 require "mock_openai/rspec"
@@ -57,7 +59,27 @@ it "returns a canned response", :mock_openai do
 end
 ```
 
-That's it. The `:mock_openai` tag wires everything up and resets state between tests automatically.
+The `:mock_openai` tag wires everything up and resets state between tests automatically.
+
+**Minitest:**
+
+```ruby
+# test/test_helper.rb
+require "mock_openai/minitest"
+```
+
+```ruby
+class MyChatTest < Minitest::Test
+  include MockOpenAI::Minitest
+
+  def test_returns_canned_response
+    MockOpenAI.set_responses([{ match: "Hello", response: "Hi!" }])
+    assert_equal "Hi!", MyService.call_openai("Hello")
+  end
+end
+```
+
+`MockOpenAI::Minitest` hooks into `before_setup` and `after_teardown` to reset state automatically.
 
 ---
 
