@@ -32,13 +32,20 @@ lib/mock_openai/
 Abstract base class implementing the full shared `call(env)` flow:
 
 1. Parse JSON body → return 400 on invalid JSON
-2. Call `parse_request(body)` (template method) → `{last_user_message:, system_message:, model:}`
+2. Call `parse_request(body)` (template method) → `{last_user_message:, system_message:, model:}` — **`last_user_message` must be a normalized plain string**
 3. Read state, match rules against `last_user_message`
-4. If matched rule has `failure_mode` → apply it
-5. Else resolve content (rule response → rule template → state default → config default), call `build_success_response(content, model)` (template method)
+4. If matched rule has `failure_mode` → call `apply_failure_mode(mode, request_context)` (template method)
+5. Else resolve content (rule response → rule template → `state["response_template"]` → `state["default_response"]` → config `default_response`), call `build_success_response(content, model)` (template method)
 6. Log request
 
-Also provides shared helper `extract_text_content(content)` that handles both plain string content and OpenAI/Anthropic content-block arrays:
+**Template methods (subclasses must implement):**
+- `parse_request(body)` → `{last_user_message: String, system_message: String, model: String}`
+- `build_success_response(content, model)` → Rack response tuple
+- `apply_failure_mode(mode, request_context)` → Rack response tuple — handles provider-specific failure payloads (e.g. `:timeout` body shape, SSE format for `:stream_truncated`)
+
+`request_context` passed to `apply_failure_mode` is the hash returned by `parse_request`: `{last_user_message:, system_message:, model:}`. Handlers may use `model` to echo the model name in failure responses (e.g. SSE chunks), but are not required to.
+
+**Shared helper** `extract_text_content(content)` normalizes plain strings and content-block arrays. `parse_request` implementations must call this when extracting `last_user_message`:
 
 ```ruby
 def extract_text_content(content)
@@ -54,17 +61,19 @@ This handles vision/multimodal requests for both providers.
 
 ### Handlers::ChatCompletions
 
-Refactored to extend `Base`. Implements two template methods:
+Refactored to extend `Base`. Implements three template methods:
 
-- `parse_request(body)` — extracts last user message from `messages` array; system message from the array entry with `role: "system"`
+- `parse_request(body)` — extracts last user message from `messages` array (calls `extract_text_content` to normalize); system message from the array entry with `role: "system"`; default model `"mock-gpt-4"`
 - `build_success_response(content, model)` — delegates to `ResponseBuilder.build`
+- `apply_failure_mode(mode, request_context)` — existing behavior: `:timeout` sleeps then returns OpenAI-format empty choices; `:stream_truncated` sends partial OpenAI SSE chunks
 
 ### Handlers::Messages
 
-New handler extending `Base`. Implements two template methods:
+New handler extending `Base`. Implements three template methods:
 
-- `parse_request(body)` — extracts last user message from `messages` array (same structure as OpenAI); system message from top-level `body["system"]` string (Anthropic-specific)
+- `parse_request(body)` — extracts last user message from `messages` array (calls `extract_text_content` to normalize); system message from top-level `body["system"]` string (Anthropic-specific); default model `"mock-claude-3"`
 - `build_success_response(content, model)` — delegates to `AnthropicResponseBuilder.build`
+- `apply_failure_mode(mode, request_context)` — `:timeout` sleeps then returns Anthropic-format error body; `:stream_truncated` sends partial Anthropic SSE chunks; other modes (`:rate_limit`, `:malformed_json`, `:internal_error`) return provider-neutral HTTP error responses and work unchanged
 
 ### AnthropicResponseBuilder
 
@@ -110,14 +119,16 @@ Unchanged. Rules match on `last_user_message` using the existing exact → regex
 ## Error Handling
 
 - Invalid JSON body → 400 with error message (same as existing behavior)
-- No matching rule → falls back to `state["default_response"]` → config `default_response`
-- Failure modes work identically across both handlers
+- No matching rule → falls back to `state["response_template"]` → `state["default_response"]` → config `default_response`
+- `:rate_limit` and `:internal_error` failure modes return HTTP 429/500 JSON error bodies — these are provider-neutral and work identically across both handlers
+- `:malformed_json` returns an intentionally unparseable body fragment. The current fragment (`{ "choices": [`) is OpenAI-specific but the intent is purely to trigger a `JSON::ParserError` — the key name is irrelevant since the body is never successfully parsed. Both handlers use the same fragment; no provider-specific variant is needed.
+- `:timeout` and `:stream_truncated` are provider-specific: each handler's `apply_failure_mode` produces the correct format for its provider
 
 ## Testing
 
 Four spec files affected:
 
-- **`spec/mock_openai/handlers/base_spec.rb`** (new) — tests shared flow via a minimal concrete double subclass; covers JSON error handling, rule matching, failure modes, content resolution
+- **`spec/mock_openai/handlers/base_spec.rb`** (new) — tests shared flow via a minimal concrete double subclass with stub implementations of all three template methods returning neutral test values; covers JSON error handling, rule matching, failure mode dispatch (verifying `apply_failure_mode` is called with the correct mode), and the five-step content resolution chain explicitly: rule response, rule template, `state["response_template"]`, `state["default_response"]`, config default
 - **`spec/mock_openai/handlers/messages_spec.rb`** (new) — mirrors `chat_completions_spec.rb`; covers rule matching, failure modes, default response, malformed body, Anthropic system message extraction
 - **`spec/mock_openai/anthropic_response_builder_spec.rb`** (new) — mirrors `response_builder_spec.rb`; verifies correct fields, unique ids, content block structure
 - **`spec/mock_openai/handlers/chat_completions_spec.rb`** (updated) — remove logic moved to Base; keep OpenAI-specific behavior tests
