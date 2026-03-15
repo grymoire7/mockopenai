@@ -9,7 +9,7 @@
 ![Ruby Version](https://img.shields.io/badge/Ruby-%3E%3D%203.0-green?logo=Ruby&logoColor=red&label=Ruby%20version&color=green)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/grymoire7/mockopenai/blob/main/LICENSE)
 
-A local mock server for OpenAI-compatible APIs — deterministic responses and
+A local mock server for OpenAI-compatible APIs with deterministic responses and
 per-request failure simulation for any Ruby application.
 
 MockOpenAI lets you test any Ruby app that calls an LLM **without hitting real
@@ -20,11 +20,11 @@ Sinatra, CLI tools, background jobs, or plain Ruby scripts.
 
 ## Why MockOpenAI?
 
-- **No API keys needed** — zero token costs, zero network calls in CI
-- **Deterministic** — control exactly what the LLM "says" for each request
-- **Per-request failure modes** — simulate timeouts, rate limits, malformed JSON, and more
-- **No app changes** — no monkey-patching, no client wrapping, no test doubles
-- **Fast CI** — tests run at local speed, not API speed
+- **No API keys needed**: zero token costs, zero network calls in CI
+- **Deterministic**: control exactly what the LLM "says" for each request
+- **Per-request failure modes**: simulate timeouts, rate limits, malformed JSON, and more
+- **No app changes**: no monkey-patching, no client wrapping, no test doubles
+- **Fast CI**: tests run at local speed, not API speed
 
 ---
 
@@ -65,10 +65,10 @@ That's it. The `:mock_openai` tag wires everything up and resets state between t
 
 Full documentation is available at **[grymoire7.github.io/mockopenai](https://grymoire7.github.io/mockopenai)**:
 
-- [Getting Started](https://grymoire7.github.io/mockopenai/getting-started/) — installation, setup, first test
-- [Usage](https://grymoire7.github.io/mockopenai/usage/) — in-process vs. standalone server modes
-- [Examples](https://grymoire7.github.io/mockopenai/examples/) — multi-step conversations, failure modes, templates
-- [Reference](https://grymoire7.github.io/mockopenai/reference/) — full API, RSpec tags, CLI, and configuration
+- [Getting Started](https://grymoire7.github.io/mockopenai/getting-started/): installation, setup, first test
+- [Usage](https://grymoire7.github.io/mockopenai/usage/): in-process vs. standalone server modes
+- [Examples](https://grymoire7.github.io/mockopenai/examples/): multi-step conversations, failure modes, templates
+- [Reference](https://grymoire7.github.io/mockopenai/reference/): full API, RSpec tags, CLI, and configuration
 
 ---
 
