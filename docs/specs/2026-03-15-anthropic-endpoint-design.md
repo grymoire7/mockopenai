@@ -5,11 +5,18 @@
 
 ## Overview
 
-Add support for the Anthropic Messages API endpoint (`POST /v1/messages`) so MockOpenAI can serve as a drop-in mock for both OpenAI-compatible and Anthropic clients. This enables jojo (and similar projects using RubyLLM's Anthropic provider) to use MockOpenAI without switching providers or monkey-patching.
+Add support for the Anthropic Messages API endpoint (`POST /v1/messages`) so
+MockOpenAI can serve as a drop-in mock for both OpenAI-compatible and Anthropic
+clients. This enables jojo (and similar projects using RubyLLM's Anthropic
+provider) to use MockOpenAI without switching providers or monkey-patching.
 
 ## Motivation
 
-RubyLLM's Anthropic provider posts to `/v1/messages` and parses Anthropic-format responses (`content: [{type: "text", text: "..."}]`). MockOpenAI currently only handles `/v1/chat/completions` (OpenAI format). Adding the Anthropic endpoint makes MockOpenAI useful for any Ruby project using Anthropic's API directly or via an abstraction like RubyLLM.
+RubyLLM's Anthropic provider posts to `/v1/messages` and parses
+Anthropic-format responses (`content: [{type: "text", text: "..."}]`).
+MockOpenAI currently only handles `/v1/chat/completions` (OpenAI format).
+Adding the Anthropic endpoint makes MockOpenAI useful for any Ruby project
+using Anthropic's API directly or via an abstraction like RubyLLM.
 
 ## Architecture
 
