@@ -35,7 +35,7 @@ module MockOpenAI
         raise NotImplementedError, "#{self.class} must implement #apply_failure_mode"
       end
 
-      # Shared helpers
+      protected
 
       def extract_text_content(content)
         if content.is_a?(Array)
@@ -44,6 +44,8 @@ module MockOpenAI
           content.to_s
         end
       end
+
+      private
 
       def resolve_content(rule, state, request_context)
         model = request_context[:model]
