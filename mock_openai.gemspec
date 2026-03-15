@@ -5,7 +5,7 @@ require_relative "lib/mock_openai/version"
 Gem::Specification.new do |spec|
   spec.name = "mock_openai"
   spec.version = MockOpenAI::VERSION
-  spec.authors = ["Tracy"]
+  spec.authors = ["Tracy Atteberry"]
   spec.summary = "A local mock server for OpenAI-compatible APIs"
   spec.description = "Drop-in mock server for testing Rails apps that use OpenAI-compatible APIs. Provides deterministic responses and per-request failure simulation."
   spec.license = "MIT"
