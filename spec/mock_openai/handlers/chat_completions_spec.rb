@@ -54,6 +54,24 @@ RSpec.describe MockOpenAI::Handlers::ChatCompletions do
     end
   end
 
+  context "with a content-block array as user message (vision format)" do
+    before do
+      MockOpenAI::State.write(rules: [{"match" => "Hello from block", "response" => "matched"}])
+    end
+
+    it "normalizes the content-block array to plain text for rule matching" do
+      body = {
+        "model" => "gpt-4",
+        "messages" => [
+          {"role" => "user", "content" => [{"type" => "text", "text" => "Hello from block"}]}
+        ]
+      }
+      post "/v1/chat/completions", body.to_json, "CONTENT_TYPE" => "application/json"
+      response_body = JSON.parse(last_response.body)
+      expect(response_body.dig("choices", 0, "message", "content")).to eq("matched")
+    end
+  end
+
   context "with a template rule" do
     before do
       MockOpenAI::State.write(rules: [
