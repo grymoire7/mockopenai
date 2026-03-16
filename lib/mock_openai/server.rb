@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "logger"
+require "socket"
 
 module MockOpenAI
   class Server
@@ -30,6 +31,17 @@ module MockOpenAI
         Logger: Logger.new($stdout),
         AccessLog: []
       )
+    end
+
+    def self.wait_until_ready(timeout: 5)
+      deadline = Time.now + timeout
+      loop do
+        TCPSocket.new("127.0.0.1", MockOpenAI.config.port).close
+        return
+      rescue Errno::ECONNREFUSED
+        raise "MockOpenAI server did not start within #{timeout}s" if Time.now > deadline
+        sleep 0.05
+      end
     end
   end
 end

@@ -43,4 +43,32 @@ RSpec.describe MockOpenAI::Server do
       end.to output(/localhost:4001/).to_stdout
     end
   end
+
+  describe ".wait_until_ready" do
+    it "returns without raising when a TCP listener is open on the port" do
+      require "socket"
+      # Bind to an ephemeral port so we don't collide with anything
+      server = TCPServer.new("127.0.0.1", 0)
+      port = server.local_address.ip_port
+      acceptor = Thread.new {
+        begin
+          server.accept
+        rescue
+          nil
+        end
+      }
+
+      allow(MockOpenAI.config).to receive(:port).and_return(port)
+      MockOpenAI::Server.wait_until_ready
+
+      acceptor.kill
+      server.close
+    end
+
+    it "raises RuntimeError when the port does not open within the timeout" do
+      allow(TCPSocket).to receive(:new).and_raise(Errno::ECONNREFUSED)
+      expect { MockOpenAI::Server.wait_until_ready(timeout: 0.1) }
+        .to raise_error(RuntimeError, /did not start within/)
+    end
+  end
 end
