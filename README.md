@@ -53,6 +53,14 @@ bundle install
 ```ruby
 # spec/rails_helper.rb
 require "mock_openai/rspec"
+
+# If your code makes real HTTP connections to the LLM API (CLI tools,
+# integration tests, background jobs), start the server once here:
+MockOpenAI.start_test_server!
+
+RubyLLM.configure do |config|
+  config.anthropic_api_base = MockOpenAI.server_url
+end
 ```
 
 ```ruby
@@ -62,7 +70,7 @@ it "returns a canned response", :mock_openai do
 end
 ```
 
-The `:mock_openai` tag wires everything up and resets state between tests automatically.
+The `:mock_openai` tag wires everything up and resets state between tests automatically. `start_test_server!` is idempotent and blocks until the server is ready.
 
 **Minitest:**
 

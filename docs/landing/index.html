@@ -682,14 +682,18 @@ end</code></pre>
           <div class="flex gap-5">
             <div class="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-xs font-display font-bold text-slate-400 flex-shrink-0 mt-0.5">3</div>
             <div class="flex-1">
-              <p class="text-slate-300 text-sm font-mono mb-2">Require the integration for your framework</p>
+              <p class="text-slate-300 text-sm font-mono mb-2">Require the integration and start the server</p>
               <div class="code-wrapper rounded-lg overflow-hidden border border-white/5 relative">
                 <button class="copy-btn absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
                 <pre><code class="language-ruby"># RSpec (spec/rails_helper.rb or spec/spec_helper.rb)
 require "mock_openai/rspec"
+MockOpenAI.start_test_server!
+RubyLLM.configure { |c| c.openai_api_base = MockOpenAI.server_url }
 
 # Minitest (test/test_helper.rb)
-require "mock_openai/minitest"</code></pre>
+require "mock_openai/minitest"
+MockOpenAI.start_test_server!
+RubyLLM.configure { |c| c.openai_api_base = MockOpenAI.server_url }</code></pre>
               </div>
             </div>
           </div>
