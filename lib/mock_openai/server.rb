@@ -11,24 +11,27 @@ module MockOpenAI
       FileUtils.mkdir_p(File.dirname(state_file))
       State.reset! unless File.exist?(state_file)
 
-      puts "MockOpenAI v#{VERSION} started"
-      puts "  Listening on: http://localhost:#{port}"
-      puts "  State file:   #{state_file}"
+      if MockOpenAI.verbose?
+        puts "MockOpenAI v#{VERSION} started"
+        puts "  Listening on: http://localhost:#{port}"
+        puts "  State file:   #{state_file}"
 
-      config_status = File.exist?("mock_openai.yml") ? "mock_openai.yml" : "mock_openai.yml (not found, using defaults)"
-      puts "  Config:       #{config_status}"
+        config_status = File.exist?("mock_openai.yml") ? "mock_openai.yml" : "mock_openai.yml (not found, using defaults)"
+        puts "  Config:       #{config_status}"
+      end
 
       run_rack_server(port: port)
     end
 
     def self.run_rack_server(port: MockOpenAI.config.port)
       require "rackup"
+      logger = MockOpenAI.verbose? ? Logger.new($stdout) : Logger.new(IO::NULL)
       Rackup::Server.start(
         app: Router.new,
         Port: port,
         Host: "127.0.0.1",
         server: :webrick,
-        Logger: Logger.new($stdout),
+        Logger: logger,
         AccessLog: []
       )
     end

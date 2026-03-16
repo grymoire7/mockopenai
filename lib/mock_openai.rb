@@ -23,13 +23,20 @@ require_relative "mock_openai/server"
 require_relative "mock_openai/cli"
 
 module MockOpenAI
+  @verbose = true
+
   class << self
     def config
       @config ||= Config.load
     end
 
+    def verbose?
+      @verbose
+    end
+
     def start_test_server!
       return if server_reachable?
+      @verbose = false
       Thread.new { Server.start }
       Server.wait_until_ready
     end

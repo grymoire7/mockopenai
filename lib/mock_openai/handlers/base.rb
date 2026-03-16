@@ -88,6 +88,7 @@ module MockOpenAI
       end
 
       def log_request(env, rule_index, failure_mode)
+        return unless MockOpenAI.verbose?
         method = env["REQUEST_METHOD"]
         path = env["PATH_INFO"]
         rule_label = rule_index.nil? ? "none" : rule_index.to_s
