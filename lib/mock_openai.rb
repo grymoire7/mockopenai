@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "socket"
 require_relative "mock_openai/version"
 require_relative "mock_openai/config"
 require_relative "mock_openai/state"
@@ -27,6 +28,16 @@ module MockOpenAI
       @config ||= Config.load
     end
 
+    def start_test_server!
+      return if server_reachable?
+      Thread.new { Server.start }
+      Server.wait_until_ready
+    end
+
+    def server_url
+      "http://127.0.0.1:#{config.port}"
+    end
+
     def set_responses(rules)
       State.write(rules: rules.map { |r| r.transform_keys(&:to_s) })
     end
@@ -43,6 +54,15 @@ module MockOpenAI
       state = State.read
       catch_all = state["rules"].find { |r| r["match"] == ".*" && r["failure_mode"] }
       catch_all&.dig("failure_mode")&.to_sym
+    end
+
+    private
+
+    def server_reachable?
+      TCPSocket.new("127.0.0.1", config.port).close
+      true
+    rescue Errno::ECONNREFUSED
+      false
     end
   end
 end

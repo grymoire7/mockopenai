@@ -49,4 +49,37 @@ RSpec.describe MockOpenAI do
       expect(MockOpenAI.current_failure_mode).to be_nil
     end
   end
+
+  describe ".server_url" do
+    it "returns the base URL with the configured port" do
+      expect(MockOpenAI.server_url).to eq("http://127.0.0.1:#{MockOpenAI.config.port}")
+    end
+  end
+
+  describe ".start_test_server!" do
+    it "starts a background thread and waits for readiness when port is not open" do
+      allow(MockOpenAI::Server).to receive(:start)
+      allow(Thread).to receive(:new).and_yield
+      expect(MockOpenAI::Server).to receive(:wait_until_ready)
+
+      # First TCPSocket.new (in server_reachable?) raises, second succeeds
+      call_count = 0
+      allow(TCPSocket).to receive(:new) do
+        call_count += 1
+        if call_count == 1
+          raise Errno::ECONNREFUSED
+        else
+          double(close: nil)
+        end
+      end
+
+      MockOpenAI.start_test_server!
+    end
+
+    it "is a no-op when the port is already open" do
+      allow(TCPSocket).to receive(:new).with("127.0.0.1", MockOpenAI.config.port).and_return(double(close: nil))
+      expect(Thread).not_to receive(:new)
+      MockOpenAI.start_test_server!
+    end
+  end
 end
