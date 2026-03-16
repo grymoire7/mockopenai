@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MockOpenAI: Test Your Rails AI Features Without the Drama</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/ruby.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ruby: {
+              300: '#fca5a5',
+              400: '#f87171',
+              500: '#ef4444',
+              600: '#dc2626',
+              700: '#b91c1c',
+            },
+            electric: {
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+            },
+            ink: {
+              950: '#020609',
+              900: '#040810',
+              800: '#080f1e',
+              700: '#0d1627',
+              600: '#111f33',
+              500: '#1a2d47',
+              400: '#243d5c',
+              300: '#2f5070',
+            }
+          },
+          fontFamily: {
+            display: ['Unbounded', 'sans-serif'],
+            mono: ['DM Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: #040810;
+      color: #94a3b8;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Subtle noise grain */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Grid background */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(56, 189, 248, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Glow effects */
+    .ruby-glow {
+      box-shadow: 0 0 24px rgba(220, 38, 38, 0.35), 0 0 64px rgba(220, 38, 38, 0.12);
+      transition: box-shadow 0.3s ease;
+    }
+    .ruby-glow:hover {
+      box-shadow: 0 0 32px rgba(220, 38, 38, 0.55), 0 0 80px rgba(220, 38, 38, 0.2);
+    }
+    .electric-glow {
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.12), 0 0 64px rgba(56, 189, 248, 0.04);
+    }
+
+    /* Highlight.js override */
+    .hljs {
+      background: #080f1e !important;
+      padding: 1.25rem 1.5rem !important;
+      border-radius: 0 !important;
+      font-family: 'DM Mono', monospace !important;
+      font-size: 0.8125rem !important;
+      line-height: 1.75 !important;
+    }
+
+    /* Scroll-triggered fade in */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+
+    /* Feature card */
+    .feature-card {
+      border: 1px solid rgba(56, 189, 248, 0.07);
+      transition: border-color 0.25s, background-color 0.25s;
+    }
+    .feature-card:hover {
+      border-color: rgba(220, 38, 38, 0.25);
+      background-color: rgba(220, 38, 38, 0.02);
+    }
+
+    /* Failure badge */
+    .fail-badge {
+      border: 1px solid rgba(220, 38, 38, 0.25);
+      color: #f87171;
+      background: rgba(220, 38, 38, 0.05);
+      transition: background 0.2s, border-color 0.2s;
+      cursor: default;
+    }
+    .fail-badge:hover {
+      background: rgba(220, 38, 38, 0.12);
+      border-color: rgba(220, 38, 38, 0.5);
+    }
+
+    /* Tab buttons */
+    .tab-btn {
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      color: #475569;
+    }
+    .tab-btn:hover { color: #94a3b8; }
+    .tab-btn.active {
+      color: #f87171;
+      border-bottom-color: #dc2626;
+    }
+
+    /* Comparison table */
+    .vs-col-bad  { color: #f87171; }
+    .vs-col-good { color: #38bdf8; }
+    .vs-marker { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #040810; }
+    ::-webkit-scrollbar-thumb { background: #1a2d47; border-radius: 2px; }
+
+    /* Copy button */
+    .copy-btn {
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .code-wrapper:hover .copy-btn {
+      opacity: 1;
+    }
+
+    /* Pulse dot */
+    @keyframes pulse-ring {
+      0%   { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .pulse-dot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: currentColor;
+      animation: pulse-ring 1.5s ease-out infinite;
+    }
+
+    /* Stagger hero entrance */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-enter { animation: rise 0.7s ease forwards; opacity: 0; }
+    .hero-enter-1 { animation-delay: 0.05s; }
+    .hero-enter-2 { animation-delay: 0.2s; }
+    .hero-enter-3 { animation-delay: 0.35s; }
+    .hero-enter-4 { animation-delay: 0.5s; }
+    .hero-enter-5 { animation-delay: 0.65s; }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden">
+
+  <!-- ═══════════════════ NAV ═══════════════════ -->
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/5 backdrop-blur-xl" style="background: rgba(4,8,16,0.85)">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <img src="./mockopenai_logo_medium.png" alt="MockOpenAI" class="h-7 w-7">
+        <span class="font-display text-xs font-bold text-white tracking-tight">MockOpenAI</span>
+      </div>
+      <div class="flex items-center gap-5 text-xs">
+        <a href="https://grymoire7.github.io/mockopenai" class="text-slate-500 hover:text-slate-200 transition-colors">Docs</a>
+        <a href="https://github.com/grymoire7/mockopenai" class="text-slate-500 hover:text-slate-200 transition-colors flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="#install" class="px-3.5 py-1.5 bg-ruby-600 text-white rounded font-display font-bold text-xs ruby-glow hover:bg-ruby-500 transition-colors">
+          Get Started
+        </a>
+      </div>
+    </div>
+  </nav>
+
+
+  <!-- ═══════════════════ HERO ═══════════════════ -->
+  <section class="relative grid-bg min-h-screen flex items-center pt-14 overflow-hidden">
+    <!-- Background glows -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+      <div class="absolute" style="top: 20%; left: 45%; transform: translate(-50%, -50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(220,38,38,0.06) 0%, transparent 65%);"></div>
+      <div class="absolute" style="top: 60%; right: 10%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(56,189,248,0.04) 0%, transparent 65%);"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-6 py-28 w-full">
+      <div class="grid lg:grid-cols-[1fr_auto] gap-16 items-center">
+
+        <!-- Left: text -->
+        <div class="max-w-2xl">
+          <div class="hero-enter hero-enter-1 inline-flex items-center gap-2 mb-8 px-3 py-1.5 rounded-full border border-electric-400/20 bg-electric-400/5">
+            <span class="relative w-1.5 h-1.5 pulse-dot text-electric-400">
+              <span class="block w-1.5 h-1.5 rounded-full bg-electric-400"></span>
+            </span>
+            <span class="text-electric-400 text-xs font-mono tracking-widest">RUBY GEM · MIT · FREE</span>
+          </div>
+
+          <h1 class="hero-enter hero-enter-2 font-display font-black text-white leading-[0.92] tracking-tight mb-6" style="font-size: clamp(2.8rem, 7vw, 5.5rem)">
+            Test your AI<br>
+            <span class="text-ruby-600">without the drama.</span>
+          </h1>
+
+          <p class="hero-enter hero-enter-3 text-slate-400 leading-relaxed mb-10 max-w-lg" style="font-size: 0.9375rem">
+            MockOpenAI is a mocking gem for OpenAI-compatible and Anthropic APIs.
+            Deterministic responses, on-demand failure injection, zero app changes.
+            Works with Rails, Sinatra, CLI tools, and plain Ruby scripts.
+          </p>
+
+          <div class="hero-enter hero-enter-4 flex flex-wrap items-center gap-3 mb-14">
+            <a href="#install" class="inline-flex items-center gap-2 px-6 py-3 bg-ruby-600 text-white font-display font-bold text-sm rounded ruby-glow hover:bg-ruby-500 transition-all">
+              Install the gem
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </a>
+            <a href="https://grymoire7.github.io/mockopenai" class="px-6 py-3 border border-white/10 text-slate-300 font-display font-bold text-sm rounded hover:border-white/25 hover:text-white transition-all">
+              Read the docs
+            </a>
+            <a href="https://github.com/grymoire7/mockopenai" class="px-6 py-3 text-slate-400 font-display font-bold text-sm rounded hover:text-slate-400 transition-colors flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              GitHub
+            </a>
+          </div>
+
+          <!-- Quick code sample -->
+          <div class="hero-enter hero-enter-5 code-wrapper relative rounded-lg overflow-hidden border border-white/5 electric-glow max-w-xl">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5" style="background: #06101f">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-ruby-600/70"></div>
+                <div class="w-2.5 h-2.5 rounded-full" style="background: rgba(234,179,8,0.3)"></div>
+                <div class="w-2.5 h-2.5 rounded-full" style="background: rgba(34,197,94,0.25)"></div>
+              </div>
+              <span class="text-xs text-slate-700 font-mono">spec/services/chat_spec.rb</span>
+              <button class="copy-btn text-xs text-slate-400 hover:text-slate-200 transition-colors font-mono" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre><code class="language-ruby">it "returns a canned response", :mock_openai do
+  MockOpenAI.set_responses([
+    { match: "Hello", response: "Hi there!" }
+  ])
+
+  result = ChatService.call("Hello, can you help me?")
+
+  expect(result).to eq("Hi there!")
+end</code></pre>
+          </div>
+        </div>
+
+        <!-- Right: stat pills -->
+        <div class="hidden lg:flex flex-col gap-3">
+          <div class="px-5 py-4 rounded-xl border border-white/5 text-center" style="background: #080f1e; min-width: 140px">
+            <div class="font-display font-black text-3xl text-white mb-0.5">0</div>
+            <div class="text-xs text-slate-400 font-mono">API calls</div>
+          </div>
+          <div class="px-5 py-4 rounded-xl border border-white/5 text-center" style="background: #080f1e">
+            <div class="font-display font-black text-3xl text-white mb-0.5">$0</div>
+            <div class="text-xs text-slate-400 font-mono">token cost</div>
+          </div>
+          <div class="px-5 py-4 rounded-xl border border-ruby-600/20 text-center" style="background: rgba(220,38,38,0.04)">
+            <div class="font-display font-black text-3xl text-ruby-400 mb-0.5">∞</div>
+            <div class="text-xs text-slate-400 font-mono">free, always</div>
+          </div>
+          <div class="px-5 py-4 rounded-xl border border-white/5 text-center" style="background: #080f1e">
+            <div class="font-display font-black text-3xl text-electric-400 mb-0.5">5</div>
+            <div class="text-xs text-slate-400 font-mono">failure modes</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════ PAIN vs GAIN ═══════════════════ -->
+  <section class="py-24 border-t border-white/5">
+    <div class="max-w-6xl mx-auto px-6">
+
+      <div class="reveal mb-16">
+        <p class="text-electric-400 text-xs font-mono tracking-widest mb-3">THE PROBLEM</p>
+        <h2 class="font-display font-black text-white leading-tight" style="font-size: clamp(1.75rem, 4vw, 2.75rem)">
+          Testing AI is broken.<br>We fixed it.
+        </h2>
+      </div>
+
+      <div class="reveal grid md:grid-cols-2 rounded-xl overflow-hidden border border-white/5">
+        <!-- Without -->
+        <div class="p-8 md:p-10 border-b md:border-b-0 md:border-r border-white/5" style="background: #070d1b">
+          <p class="vs-marker vs-col-bad mb-7 block">WITHOUT MOCKOPENAI</p>
+          <ul class="space-y-5">
+            <li class="flex items-start gap-3">
+              <span class="vs-col-bad mt-0.5 text-xs">✗</span>
+              <span class="text-slate-400 text-sm">Real API calls burn tokens and slow CI to a crawl</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-bad mt-0.5 text-xs">✗</span>
+              <span class="text-slate-400 text-sm">Non-deterministic responses make assertions unreliable</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-bad mt-0.5 text-xs">✗</span>
+              <span class="text-slate-400 text-sm">Rate limits and network failures randomly break pipelines</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-bad mt-0.5 text-xs">✗</span>
+              <span class="text-slate-400 text-sm">Error-handling code never gets exercised. Until production.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-bad mt-0.5 text-xs">✗</span>
+              <span class="text-slate-400 text-sm">VCR cassettes go stale. WebMock is just guessing.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- With -->
+        <div class="p-8 md:p-10" style="background: #070d1b">
+          <p class="vs-marker vs-col-good mb-7 block">WITH MOCKOPENAI</p>
+          <ul class="space-y-5">
+            <li class="flex items-start gap-3">
+              <span class="vs-col-good mt-0.5 text-xs">✓</span>
+              <span class="text-slate-400 text-sm">Zero API calls, zero cost. Runs entirely local.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-good mt-0.5 text-xs">✓</span>
+              <span class="text-slate-400 text-sm">Deterministic: same input produces the same output, always</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-good mt-0.5 text-xs">✓</span>
+              <span class="text-slate-400 text-sm">No rate limits. No flakiness. CI completes in seconds.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-good mt-0.5 text-xs">✓</span>
+              <span class="text-slate-400 text-sm">Inject failures on demand. Test every edge case.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="vs-col-good mt-0.5 text-xs">✓</span>
+              <span class="text-slate-400 text-sm">No app changes. No wrapping, patching, or prompt pollution.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════ CODE EXAMPLES (TABBED) ═══════════════════ -->
+  <section class="py-24 border-t border-white/5">
+    <div class="max-w-6xl mx-auto px-6">
+
+      <div class="reveal mb-12">
+        <p class="text-electric-400 text-xs font-mono tracking-widest mb-3">EXAMPLES</p>
+        <h2 class="font-display font-black text-white leading-tight" style="font-size: clamp(1.75rem, 4vw, 2.75rem)">
+          Your test framework.<br>Your rules.
+        </h2>
+      </div>
+
+      <div class="reveal">
+        <!-- Tab nav -->
+        <div class="flex gap-0 border-b border-white/5">
+          <button class="tab-btn active px-5 py-3 text-xs font-mono" data-tab="basic">RSpec</button>
+          <button class="tab-btn px-5 py-3 text-xs font-mono" data-tab="minitest">Minitest</button>
+          <button class="tab-btn px-5 py-3 text-xs font-mono" data-tab="multi">Multi-step</button>
+          <button class="tab-btn px-5 py-3 text-xs font-mono" data-tab="failures">Failures</button>
+          <button class="tab-btn px-5 py-3 text-xs font-mono" data-tab="templates">Templates</button>
+        </div>
+
+        <!-- Tab panels -->
+        <div class="rounded-b-xl overflow-hidden border border-t-0 border-white/5">
+
+          <div class="tab-pane" id="tab-basic">
+            <div class="px-4 py-2.5 border-b border-white/5 flex items-center justify-between" style="background: #06101f">
+              <span class="text-xs text-slate-700 font-mono">Canned response for a matching prompt</span>
+              <button class="copy-btn text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre><code class="language-ruby">it "returns a canned response", :mock_openai do
+  MockOpenAI.set_responses([
+    { match: "Hello", response: "Hi there!" }
+  ])
+
+  result = ChatService.call("Hello, can you help me?")
+
+  expect(result).to eq("Hi there!")
+end</code></pre>
+          </div>
+
+          <div class="tab-pane hidden" id="tab-minitest">
+            <div class="px-4 py-2.5 border-b border-white/5 flex items-center justify-between" style="background: #06101f">
+              <span class="text-xs text-slate-700 font-mono">Minitest — include the module, state resets automatically</span>
+              <button class="copy-btn text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre><code class="language-ruby">class MyChatTest &lt; Minitest::Test
+  include MockOpenAI::Minitest
+
+  def test_returns_canned_response
+    MockOpenAI.set_responses([
+      { match: "Hello", response: "Hi there!" }
+    ])
+
+    result = ChatService.call("Hello, can you help me?")
+
+    assert_equal "Hi there!", result
+  end
+
+  def test_handles_rate_limit
+    MockOpenAI.set_failure_mode(:rate_limit)
+
+    result = SmartService.call("summarize this")
+
+    assert_equal :cache, result[:source]
+  end
+end</code></pre>
+          </div>
+
+          <div class="tab-pane hidden" id="tab-multi">
+            <div class="px-4 py-2.5 border-b border-white/5 flex items-center justify-between" style="background: #06101f">
+              <span class="text-xs text-slate-700 font-mono">Different response per call, same test</span>
+              <button class="copy-btn text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre><code class="language-ruby">it "handles a multi-step conversation", :mock_openai do
+  MockOpenAI.set_responses([
+    { match: "Hello",    response: "Hi!" },
+    { match: "^Order.*", response: "Order shipped." },
+    { match: "Thanks",   response: "You're welcome!" }
+  ])
+
+  result = MyService.complex_flow
+
+  expect(result[:greeting]).to eq("Hi!")
+  expect(result[:order]).to eq("Order shipped.")
+  expect(result[:closing]).to eq("You're welcome!")
+end</code></pre>
+          </div>
+
+          <div class="tab-pane hidden" id="tab-failures">
+            <div class="px-4 py-2.5 border-b border-white/5 flex items-center justify-between" style="background: #06101f">
+              <span class="text-xs text-slate-700 font-mono">Trigger any failure mode, on demand</span>
+              <button class="copy-btn text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre><code class="language-ruby">it "falls back gracefully on rate limit", :mock_openai do
+  MockOpenAI.set_responses([
+    { match: ".*", failure_mode: :rate_limit }
+  ])
+
+  result = SmartService.call("summarize this")
+
+  expect(result[:source]).to eq(:cache)
+  expect(result[:error]).to be_nil
+end
+
+# Available failure modes:
+#   :timeout          - network timeout
+#   :rate_limit       - 429 Too Many Requests
+#   :internal_error   - 500 from the API
+#   :malformed_json   - unparseable response body
+#   :truncated_stream - stream cuts off mid-token</code></pre>
+          </div>
+
+          <div class="tab-pane hidden" id="tab-templates">
+            <div class="px-4 py-2.5 border-b border-white/5 flex items-center justify-between" style="background: #06101f">
+              <span class="text-xs text-slate-700 font-mono">Dynamic responses from prompt content</span>
+              <button class="copy-btn text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre><code class="language-ruby">it "personalizes the greeting", :mock_openai do
+  MockOpenAI.set_responses([
+    {
+      match:    "my name is (?&lt;name&gt;\w+)",
+      template: "Nice to meet you, %{name}!"
+    }
+  ])
+
+  result = ChatService.call("Hi, my name is Alice")
+
+  expect(result).to eq("Nice to meet you, Alice!")
+end</code></pre>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════ FEATURES GRID ═══════════════════ -->
+  <section class="py-24 border-t border-white/5">
+    <div class="max-w-6xl mx-auto px-6">
+
+      <div class="reveal mb-16">
+        <p class="text-electric-400 text-xs font-mono tracking-widest mb-3">FEATURES</p>
+        <h2 class="font-display font-black text-white leading-tight" style="font-size: clamp(1.75rem, 4vw, 2.75rem)">
+          Everything you need.<br>Nothing you don't.
+        </h2>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div class="feature-card reveal reveal-delay-1 p-7 rounded-xl">
+          <div class="text-xl mb-4">⚡</div>
+          <h3 class="font-display text-sm font-bold text-white mb-2">Deterministic responses</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">Same input, same output. Your tests make real assertions, not hopeful ones.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2 p-7 rounded-xl">
+          <div class="text-xl mb-4">🎯</div>
+          <h3 class="font-display text-sm font-bold text-white mb-2">Per-request matching</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">Regex, substring, or catch-all. Return different responses to different prompts in one test.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3 p-7 rounded-xl">
+          <div class="text-xl mb-4">💥</div>
+          <h3 class="font-display text-sm font-bold text-white mb-2">Failure simulation</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">Timeouts, rate limits, bad JSON, 500s, truncated streams. All testable.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-1 p-7 rounded-xl">
+          <div class="text-xl mb-4">🔧</div>
+          <h3 class="font-display text-sm font-bold text-white mb-2">Zero app changes</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">Redirect your client to localhost. No monkey-patching, no wrapping, no test doubles.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2 p-7 rounded-xl">
+          <div class="text-xl mb-4">🏎</div>
+          <h3 class="font-display text-sm font-bold text-white mb-2">CI-ready from day one</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">Runs entirely local. No API keys. No network. Moves at unit-test speed.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3 p-7 rounded-xl">
+          <div class="text-xl mb-4">💎</div>
+          <h3 class="font-display text-sm font-bold text-white mb-2">RSpec &amp; Minitest</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">One tag or one module include. State resets automatically between tests, no manual cleanup.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════ FAILURE MODES CALLOUT ═══════════════════ -->
+  <section class="py-24 border-t border-white/5">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid lg:grid-cols-2 gap-16 items-center">
+
+        <!-- Text -->
+        <div class="reveal">
+          <p class="text-ruby-600 text-xs font-mono tracking-widest mb-3">FAILURE MODES</p>
+          <h2 class="font-display font-black text-white leading-tight mb-5" style="font-size: clamp(1.75rem, 4vw, 2.75rem)">
+            Break it<br>on purpose.
+          </h2>
+          <p class="text-slate-500 text-sm leading-relaxed mb-8 max-w-md">
+            The worst time to discover your error handling is broken is in production.
+            MockOpenAI lets you inject any failure mode on demand, so you can prove
+            your app handles it before it matters.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="fail-badge px-3 py-1.5 rounded text-xs font-mono">:timeout</span>
+            <span class="fail-badge px-3 py-1.5 rounded text-xs font-mono">:rate_limit</span>
+            <span class="fail-badge px-3 py-1.5 rounded text-xs font-mono">:internal_error</span>
+            <span class="fail-badge px-3 py-1.5 rounded text-xs font-mono">:malformed_json</span>
+            <span class="fail-badge px-3 py-1.5 rounded text-xs font-mono">:truncated_stream</span>
+          </div>
+        </div>
+
+        <!-- Code -->
+        <div class="reveal code-wrapper">
+          <div class="rounded-xl overflow-hidden border border-ruby-600/20">
+            <div class="px-4 py-2.5 border-b border-ruby-600/10 flex items-center justify-between" style="background: #08050f">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-ruby-600 animate-pulse"></div>
+                <span class="text-xs text-slate-700 font-mono">failure_simulation_spec.rb</span>
+              </div>
+              <button class="copy-btn text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+            </div>
+            <pre><code class="language-ruby">describe "when the LLM is unavailable" do
+  it "falls back to cached response", :mock_openai do
+    MockOpenAI.set_responses([
+      { match: ".*", failure_mode: :timeout }
+    ])
+
+    result = SmartService.call("summarize this")
+
+    # Your error handling actually gets tested!
+    expect(result[:source]).to eq(:cache)
+    expect(result[:error]).to be_nil
+    expect(MyMailer).to have_received(:alert).once
+  end
+end</code></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════ INSTALL ═══════════════════ -->
+  <section id="install" class="py-24 border-t border-white/5">
+    <div class="max-w-6xl mx-auto px-6">
+
+      <div class="reveal mb-14">
+        <p class="text-electric-400 text-xs font-mono tracking-widest mb-3">INSTALLATION</p>
+        <h2 class="font-display font-black text-white leading-tight" style="font-size: clamp(1.75rem, 4vw, 2.75rem)">
+          Four steps.<br>Then you're done.
+        </h2>
+      </div>
+
+      <div class="grid lg:grid-cols-[1fr_320px] gap-10">
+
+        <!-- Steps -->
+        <div class="reveal space-y-7">
+
+          <div class="flex gap-5">
+            <div class="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-xs font-display font-bold text-slate-400 flex-shrink-0 mt-0.5">1</div>
+            <div class="flex-1">
+              <p class="text-slate-300 text-sm font-mono mb-2">Add to your Gemfile</p>
+              <div class="code-wrapper rounded-lg overflow-hidden border border-white/5 relative">
+                <button class="copy-btn absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+                <pre><code class="language-ruby">group :test do
+  gem "mock_openai"
+end</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-5">
+            <div class="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-xs font-display font-bold text-slate-400 flex-shrink-0 mt-0.5">2</div>
+            <div class="flex-1">
+              <p class="text-slate-300 text-sm font-mono mb-2">Install</p>
+              <div class="code-wrapper rounded-lg overflow-hidden border border-white/5 relative">
+                <button class="copy-btn absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+                <pre><code class="language-bash">bundle install</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-5">
+            <div class="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-xs font-display font-bold text-slate-400 flex-shrink-0 mt-0.5">3</div>
+            <div class="flex-1">
+              <p class="text-slate-300 text-sm font-mono mb-2">Require the integration for your framework</p>
+              <div class="code-wrapper rounded-lg overflow-hidden border border-white/5 relative">
+                <button class="copy-btn absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+                <pre><code class="language-ruby"># RSpec (spec/rails_helper.rb or spec/spec_helper.rb)
+require "mock_openai/rspec"
+
+# Minitest (test/test_helper.rb)
+require "mock_openai/minitest"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-5">
+            <div class="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-xs font-display font-bold text-slate-400 flex-shrink-0 mt-0.5">4</div>
+            <div class="flex-1">
+              <p class="text-slate-300 text-sm font-mono mb-2">Write your first test</p>
+              <div class="code-wrapper rounded-lg overflow-hidden border border-white/5 relative">
+                <button class="copy-btn absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200 font-mono" onclick="copyCode(this)">copy</button>
+                <pre><code class="language-ruby">it "works", :mock_openai do
+  MockOpenAI.set_responses([
+    { match: "Hello", response: "Hi!" }
+  ])
+  expect(MyService.call("Hello")).to eq("Hi!")
+end</code></pre>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="reveal space-y-4">
+
+          <div class="p-6 rounded-xl border border-white/5" style="background: #080f1e">
+            <p class="text-xs font-mono text-slate-700 mb-4 tracking-widest">WORKS WITH</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">Rails</span>
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">Sinatra</span>
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">RSpec</span>
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">Minitest</span>
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">ruby_llm</span>
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">openai-ruby</span>
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">Capybara</span>
+              <span class="px-2.5 py-1 rounded border border-white/5 text-xs text-slate-500 font-mono">any HTTP client</span>
+            </div>
+          </div>
+
+          <div class="p-6 rounded-xl border border-ruby-600/20 ruby-glow" style="background: rgba(220,38,38,0.03)">
+            <p class="font-display font-black text-2xl text-white leading-snug mb-3">
+              Free.<br>Open source.<br>Always.
+            </p>
+            <p class="text-slate-400 text-xs leading-relaxed mb-4">MIT-licensed. No tiers, no accounts, no telemetry.</p>
+            <a href="https://github.com/grymoire7/mockopenai" class="text-ruby-400 text-xs font-mono hover:text-ruby-300 transition-colors">
+              View on GitHub →
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════ FINAL CTA ═══════════════════ -->
+  <section class="py-28 border-t border-white/5">
+    <div class="max-w-6xl mx-auto px-6 text-center">
+      <div class="reveal max-w-lg mx-auto">
+        <img src="./mockopenai_logo_medium.png" alt="MockOpenAI" class="h-24 w-24 mx-auto mb-8 opacity-75">
+        <h2 class="font-display font-black text-white leading-tight mb-5" style="font-size: clamp(2rem, 5vw, 3.5rem)">
+          Ship AI features<br>with confidence.
+        </h2>
+        <p class="text-slate-500 text-sm mb-10">Stop hoping your AI tests are correct. Start knowing.</p>
+        <div class="flex flex-wrap items-center justify-center gap-4">
+          <a href="#install" class="px-8 py-4 bg-ruby-600 text-white font-display font-bold text-sm rounded ruby-glow hover:bg-ruby-500 transition-all">
+            Install the gem →
+          </a>
+          <a href="https://grymoire7.github.io/mockopenai" class="px-8 py-4 border border-white/10 text-slate-300 font-display font-bold text-sm rounded hover:border-white/25 hover:text-white transition-all">
+            Read the docs
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer class="border-t border-white/5 py-8">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <img src="./mockopenai_logo_medium.png" alt="" class="h-5 w-5 opacity-40">
+        <span class="text-xs font-mono text-slate-700">MockOpenAI · MIT License</span>
+      </div>
+      <div class="flex items-center gap-6 text-xs font-mono text-slate-700">
+        <a href="https://grymoire7.github.io/mockopenai" class="hover:text-slate-400 transition-colors">Docs</a>
+        <a href="https://github.com/grymoire7/mockopenai" class="hover:text-slate-400 transition-colors">GitHub</a>
+        <a href="https://rubygems.org/gems/mock_openai" class="hover:text-slate-400 transition-colors">RubyGems</a>
+      </div>
+    </div>
+  </footer>
+
+
+  <script>
+    // Syntax highlighting
+    hljs.highlightAll();
+
+    // Tabs
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+        const pane = document.getElementById('tab-' + target);
+        pane.classList.remove('hidden');
+        pane.querySelectorAll('code:not(.hljs)').forEach(el => hljs.highlightElement(el));
+      });
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Copy button
+    function copyCode(btn) {
+      const pre = btn.closest('.code-wrapper, [class*="rounded"]').querySelector('pre');
+      const code = pre ? pre.innerText : '';
+      navigator.clipboard.writeText(code).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'copied!';
+        btn.style.color = '#38bdf8';
+        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1800);
+      });
+    }
+  </script>
+
+</body>
+</html>

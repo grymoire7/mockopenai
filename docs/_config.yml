@@ -23,6 +23,7 @@ defaults:
 exclude:
   - plans/
   - specs/
+  - landing/
   - architecture.md
   - design.md
   - mvp.md
