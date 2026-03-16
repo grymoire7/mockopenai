@@ -5,6 +5,10 @@ module MockOpenAI
     class Base
       JSON_HEADERS = {"Content-Type" => "application/json"}.freeze
 
+      def json_headers
+        JSON_HEADERS.dup
+      end
+
       def call(env)
         request = Rack::Request.new(env)
         parsed = parse_json_body(request.body.read)
@@ -80,7 +84,7 @@ module MockOpenAI
 
       def error_response(status, type, message)
         body = {"error" => {"type" => type, "message" => message}}
-        [status, JSON_HEADERS, [body.to_json]]
+        [status, json_headers, [body.to_json]]
       end
 
       def log_request(env, rule_index, failure_mode)

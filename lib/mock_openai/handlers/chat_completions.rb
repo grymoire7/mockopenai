@@ -18,7 +18,7 @@ module MockOpenAI
 
       def build_success_response(content, model)
         response = ResponseBuilder.build(content: content, model: model)
-        [200, JSON_HEADERS, [response.to_json]]
+        [200, json_headers, [response.to_json]]
       end
 
       def apply_failure_mode(mode, request_context)
@@ -31,7 +31,7 @@ module MockOpenAI
         case symbol
         when :timeout
           sleep(MockOpenAI.config.timeout_seconds)
-          [200, JSON_HEADERS, [{"choices" => []}.to_json]]
+          [200, json_headers, [{"choices" => []}.to_json]]
         when :stream_truncated
           chunks = [
             "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\n\n",

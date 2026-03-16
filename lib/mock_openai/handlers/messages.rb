@@ -17,7 +17,7 @@ module MockOpenAI
 
       def build_success_response(content, model)
         response = AnthropicResponseBuilder.build(content: content, model: model)
-        [200, JSON_HEADERS, [response.to_json]]
+        [200, json_headers, [response.to_json]]
       end
 
       def apply_failure_mode(mode, request_context)
@@ -31,7 +31,7 @@ module MockOpenAI
         when :timeout
           sleep(MockOpenAI.config.timeout_seconds)
           error_body = {"type" => "error", "error" => {"type" => "overloaded_error", "message" => "Overloaded"}}
-          [200, JSON_HEADERS, [error_body.to_json]]
+          [200, json_headers, [error_body.to_json]]
         when :stream_truncated
           chunks = [
             "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello\"}}\n\n",
