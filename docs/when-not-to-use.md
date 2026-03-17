@@ -87,4 +87,13 @@ For full details, see [Getting started](getting-started/).
 <!-- Note: the spec does not name this section heading. "How to decide" is a
 sensible label for the diagram section — use it as written. -->
 
-<!-- DIAGRAM -->
+```mermaid
+flowchart TD
+    A([Start]) --> B{Use raw OpenAI/Anthropic\nHTTP client, not a wrapper?}
+    B -->|Yes| Z[Use MockOpenAI]
+    B -->|No| C{Need actual HTTP behavior:\nTCP timeouts, truncated\nstreams, retry headers?}
+    C -->|Yes| Z
+    C -->|No| D{Integration or system tests\nthat make real HTTP calls?}
+    D -->|Yes| Z
+    D -->|No| F([A helper method\nis probably enough])
+```

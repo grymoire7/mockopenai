@@ -3,3 +3,16 @@
   .site-title { flex-direction: column; align-items: flex-start; justify-content: flex-start; align-self: flex-start; height: auto !important; }
   .site-title img { max-width: 100%; height: auto; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    document.querySelectorAll('code.language-mermaid').forEach(function(el) {
+      var div = document.createElement('div');
+      div.className = 'mermaid';
+      div.textContent = el.textContent;
+      el.parentElement.replaceWith(div);
+    });
+    mermaid.run();
+  });
+</script>
