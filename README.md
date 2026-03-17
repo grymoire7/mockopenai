@@ -29,6 +29,8 @@ jobs, or plain Ruby scripts.
 - **Fast CI**: tests run at local speed, not API speed
 - **OpenAI + Anthropic**: supports `POST /v1/chat/completions` and `POST /v1/messages`
 
+Not sure if MockOpenAI is right for your project? See [When not to use MockOpenAI](https://grymoire7.github.io/mockopenai/when-not-to-use/).
+
 ---
 
 ## Installation
