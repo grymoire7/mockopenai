@@ -86,17 +86,22 @@ Note the tradeoff: this helper is tightly coupled to RubyLLM's internal API
 (`.with_schema`, `.ask`, `RubyLLM::Chat`). It breaks when the library
 refactors, but the failure is immediate and easy to fix.
 
-### 3. When MockOpenAI earns its place
+Also note: this approach handles error simulation just fine for wrapper
+library users. Passing `error: RubyLLM::RateLimitError.new(...)` raises the
+same exception your application code would see in production. MockOpenAI's failure modes add value when you need the full HTTP stack
+exercised: actual TCP delays, mid-stream cutoffs, or response header parsing.
+They are not needed for simulating the typed exceptions a library like RubyLLM
+already surfaces.
 
-(The "(brief)" below is a note for the implementer — do not include it in the
-rendered heading.)
+### 3. When MockOpenAI earns its place
 
 3-4 bullets as a mirror section, so the page is not purely negative:
 
 - Raw HTTP client or multiple LLM clients in use
 - Integration or system tests that make real HTTP connections
-- Need to test HTTP-level failure modes (timeouts, malformed JSON, truncated
-  streams, rate limit response headers)
+- Need to test actual HTTP behavior: TCP-level timeouts, truncated streams,
+  or retry-after header parsing (not just exception handling that a wrapper
+  library like RubyLLM already surfaces)
 - Background jobs or Capybara system tests where object-level mocking is awkward
 
 End with: "For full details, see [Getting started](getting-started/)." The
@@ -121,8 +126,9 @@ Start
   |yes --> [Use MockOpenAI]
   |no
   v
-[2] Do you need to test HTTP-level failures
-    (timeouts, malformed JSON, rate limits)?
+[2] Do you need to test actual HTTP behavior (TCP-level timeouts,
+    truncated streams, retry-after header parsing) rather than
+    just handling the exceptions your wrapper library raises?
   |yes --> [Use MockOpenAI]
   |no
   v
@@ -136,7 +142,9 @@ Start
 
 Fallback: if Mermaid proves difficult to wire into the Jekyll theme (more than
 3 attempts), replace with a simple markdown comparison table instead:
-- Rows = the three decision factors above
+- Rows = the three decision factors: (1) raw HTTP client, (2) actual HTTP
+  behavior like TCP timeouts/truncated streams/retry headers, (3) integration
+  or system tests
 - Columns = "Helper method" vs. "MockOpenAI"
 - Cell content = brief phrase indicating which is better suited
 
