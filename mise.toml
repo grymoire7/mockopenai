@@ -1,0 +1,10 @@
+[tools]
+ruby = "3.4.5"
+
+[tasks.test]
+description = "Run the RSpec suite"
+run = "bundle exec rspec"
+
+[tasks.lint]
+description = "StandardRB style check"
+run = "bundle exec standardrb"
