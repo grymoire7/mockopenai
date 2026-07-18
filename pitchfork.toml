@@ -1,0 +1,6 @@
+#:schema https://pitchfork.jdx.dev/schema.json
+
+[daemons.web]
+run = "exec bin/mock-openai start --port=4000"
+port = { expect = [4000], bump = false }
+ready_http = { url = "http://localhost:4000/", status = [404] }
