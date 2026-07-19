@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
 
   spec.metadata = {
     "documentation_uri" => "https://grymoire7.github.io/mockopenai",
-    "homepage_uri"      => "https://github.com/grymoire7/mockopenai"
+    "homepage_uri" => "https://github.com/grymoire7/mockopenai"
   }
 
   spec.required_ruby_version = ">= 3.0"
